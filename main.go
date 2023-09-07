@@ -96,7 +96,7 @@ func processRequest(out string, inputPath string, excludeFiles string) {
 			}
 			if !info.IsDir() && (strings.HasSuffix(info.Name(), ".go") || strings.HasSuffix(info.Name(), ".mod")) {
 				matched, _ := regexp.MatchString(excludeFiles, info.Name())
-				if matched == false {
+				if excludeFiles == "" || matched == false {
 					totalSentForProcessing++
 					go processFile(out, inputPath, path, info, resultErrChan, sem)
 				}
