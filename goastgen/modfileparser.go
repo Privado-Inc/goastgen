@@ -20,21 +20,21 @@ type ModFile struct {
  Returns:
   If given File is a valid .mod File then it will generate the module and dependency information in JSON format
 */
-func (mod *ModFile) Parse() (string, error) {
+func (mod *ModFile) Parse() (string, string, error) {
 	objMap := make(map[string]interface{})
 	contents, err := ioutil.ReadFile(mod.File)
 	if err != nil {
 		log.SetPrefix("[ERROR]")
 		log.Printf("Error while processing '%s' \n", mod.File)
 		log.Println(err)
-		return "", err
+		return "", "", err
 	}
 	modFile, err := modfile.Parse(mod.File, contents, nil)
 	if err != nil {
 		log.SetPrefix("[ERROR]")
 		log.Printf("Error while processing '%s' \n", mod.File)
 		log.Println(err)
-		return "", err
+		return "", "", err
 	}
 	objMap["node_filename"] = mod.File
 	module := make(map[string]interface{})
@@ -58,5 +58,6 @@ func (mod *ModFile) Parse() (string, error) {
 		dependencies = append(dependencies, node)
 	}
 	objMap["dependencies"] = dependencies
-	return serilizeToJsonStr(objMap)
+	json, err := serilizeToJsonStr(objMap)
+	return json, modFile.Module.Mod.Path, err
 }

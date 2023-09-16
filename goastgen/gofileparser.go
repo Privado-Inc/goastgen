@@ -10,13 +10,17 @@ import (
 )
 
 type GoFile struct {
-	File string
+	File       string
+	ModuleName string
 	// Last node id reference
 	lastNodeId int
 	//fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and File details to the node.
 	fset *token.FileSet
 	// We maintain the cache of processed object pointers mapped to their respective node_id
-	nodeAddressMap map[uintptr]interface{}
+	nodeAddressMap        map[uintptr]interface{}
+	MethodData            map[string]map[string]string
+	fullyQualifiedPackage string
+	aliasToNameSpaceMap   map[string]string
 }
 
 //Parse
@@ -33,6 +37,8 @@ func (goFile *GoFile) Parse() (string, error) {
 	goFile.fset = token.NewFileSet()
 	goFile.lastNodeId = 1
 	goFile.nodeAddressMap = make(map[uintptr]interface{})
+	goFile.MethodData = make(map[string]map[string]string)
+	goFile.aliasToNameSpaceMap = make(map[string]string)
 	// NOTE: Haven't explore much of mode parameter. Default value has been passed as 0
 	parsedAst, err := parser.ParseFile(goFile.fset, goFile.File, nil, 0)
 	if err != nil {
@@ -190,7 +196,10 @@ func (goFile *GoFile) processStruct(node interface{}, objPtrValue reflect.Value)
 	objectMap["node_id"] = goFile.lastNodeId
 	goFile.lastNodeId++
 	objectMap["node_type"] = elementValueObj.Type().String()
-
+	if objectMap["node_type"] == "ast.FuncDecl" {
+		// add function metadata to map
+		goFile.processFunctionDeclration(elementValueObj.Interface().(ast.FuncDecl))
+	}
 	if process {
 		if objPtrValue.Kind() == reflect.Pointer {
 			goFile.nodeAddressMap[objAddress] = objectMap["node_id"]
@@ -347,4 +356,9 @@ func (goFile *GoFile) processMap(object interface{}) interface{} {
 		}
 	}
 	return objMap
+}
+
+func (goFile *GoFile) processFunctionDeclration(funcDecl ast.FuncDecl) {
+	//methodData := make(map[string]string)
+
 }

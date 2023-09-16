@@ -19,7 +19,7 @@ func main() {
 	processRequest(out, inputPath, excludeFiles)
 }
 
-func processFile(out string, inputPath string, path string, info os.FileInfo, resultErr chan error, sem chan int) {
+func processFile(out string, inputPath string, path string, info os.FileInfo, moduleName string, resultErr chan error, sem chan int) {
 	sem <- 1
 	defer func() {
 		<-sem
@@ -33,13 +33,8 @@ func processFile(out string, inputPath string, path string, info os.FileInfo, re
 	} else {
 		outFile = filepath.Join(out, strings.ReplaceAll(directory, inputPath, ""), info.Name()+".json")
 	}
-	if strings.HasSuffix(info.Name(), ".go") {
-		goFile := goastgen.GoFile{File: path}
-		jsonResult, err = goFile.Parse()
-	} else if strings.HasSuffix(info.Name(), ".mod") {
-		var modParser = goastgen.ModFile{File: path}
-		jsonResult, err = modParser.Parse()
-	}
+	goFile := goastgen.GoFile{File: path, ModuleName: moduleName}
+	jsonResult, err = goFile.Parse()
 	if err != nil {
 		fmt.Printf("Failed to generate AST for %s \n", path)
 	} else {
@@ -54,8 +49,12 @@ func processFile(out string, inputPath string, path string, info os.FileInfo, re
 }
 
 func processRequest(out string, inputPath string, excludeFiles string) {
+	var jsonResult string
+	var moduleName, outFile = "", ""
+	var err error
+	var fileInfo os.FileInfo
 	if strings.HasSuffix(inputPath, ".go") {
-		fileInfo, err := os.Stat(inputPath)
+		fileInfo, err = os.Stat(inputPath)
 		if err != nil {
 			log.SetPrefix("[ERROR]")
 			log.Println("Failed to get file info:", err)
@@ -63,15 +62,15 @@ func processRequest(out string, inputPath string, excludeFiles string) {
 			return
 		}
 		directory := filepath.Dir(inputPath)
-		var outFile = ""
+
 		if out == ".ast" {
 			outFile = filepath.Join(directory, out, fileInfo.Name()+".json")
 		} else {
 			outFile = filepath.Join(out, fileInfo.Name()+".json")
 		}
 		goFile := goastgen.GoFile{File: inputPath}
-		jsonResult, perr := goFile.Parse()
-		if perr != nil {
+		jsonResult, err = goFile.Parse()
+		if err != nil {
 			fmt.Printf("Failed to generate AST for %s\n", inputPath)
 			return
 		} else {
@@ -84,24 +83,52 @@ func processRequest(out string, inputPath string, excludeFiles string) {
 			return
 		}
 	} else {
+		pattern := filepath.Join(inputPath, "*.mod")
+		// Use filepath.Glob to match files with the pattern
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			fmt.Println("Error while finding .mod file:", err)
+		}
+		for _, match := range matches {
+			directory := filepath.Dir(inputPath)
+			if out == ".ast" {
+				outFile = filepath.Join(directory, out, fileInfo.Name()+".json")
+			} else {
+				outFile = filepath.Join(out, fileInfo.Name()+".json")
+			}
+			var modParser = goastgen.ModFile{File: match}
+			jsonResult, moduleName, err = modParser.Parse()
+			if err != nil {
+				fmt.Printf("Failed to generate AST for %s\n", inputPath)
+				return
+			} else {
+				err = writeFileContents(outFile, jsonResult)
+				if err != nil {
+					fmt.Printf("Error writing AST to output location '%s'\n", outFile)
+				} else {
+					fmt.Printf("Converted AST for %s to %s\n", inputPath, outFile)
+				}
+				return
+			}
+		}
 		concurrency := runtime.NumCPU()
 		var successCount int = 0
 		var failCount int = 0
 		resultErrChan := make(chan error)
 		sem := make(chan int, concurrency)
 		var totalSentForProcessing = 0
-		err := filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
+		err = filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				log.SetPrefix("[ERROR]")
 				log.Printf("Error accessing path %s: %v\n", path, err)
 				fmt.Printf("Error accessing path '%s'\n", path)
 				return err
 			}
-			if !info.IsDir() && (strings.HasSuffix(info.Name(), ".go") || strings.HasSuffix(info.Name(), ".mod")) {
+			if !info.IsDir() && strings.HasSuffix(info.Name(), ".go") {
 				matched, _ := regexp.MatchString(excludeFiles, info.Name())
 				if excludeFiles == "" || matched == false {
 					totalSentForProcessing++
-					go processFile(out, inputPath, path, info, resultErrChan, sem)
+					go processFile(out, inputPath, path, info, moduleName, resultErrChan, sem)
 				}
 			}
 			return nil
