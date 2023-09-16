@@ -5,8 +5,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"golang.org/x/mod/modfile"
-	"io/ioutil"
 	"log"
 	"reflect"
 	"unsafe"
@@ -29,7 +27,7 @@ func ParseAstFromSource(filename string, src any) (string, error) {
 	if err != nil {
 		// TODO: convert this to just warning error log.
 		log.SetPrefix("[ERROR]")
-		log.Println("Error while parsing source from source file -> '", filename, "'")
+		log.Println("Error while parsing source from source File -> '", filename, "'")
 		log.Print(err)
 		return "", err
 	}
@@ -46,7 +44,7 @@ func ParseAstFromSource(filename string, src any) (string, error) {
  It will parse all the go files in given source folder location and generate AST in JSON format
 
  Parameters:
-  file: absolute root directory path of source code
+  File: absolute root directory path of source code
 
  Returns:
   If given directory contains valid go source code then it will generate AST in JSON format otherwise will return "" string.
@@ -71,13 +69,13 @@ func ParseAstFromDir(dir string) (string, error) {
 
 //ParseAstFromFile
 /*
- It will parse the given file and generate AST in JSON format
+ It will parse the given File and generate AST in JSON format
 
  Parameters:
-  file: absolute file path to be parsed
+  File: absolute File path to be parsed
 
  Returns:
-  If given file is a valid go code then it will generate AST in JSON format otherwise will return "" string.
+  If given File is a valid go code then it will generate AST in JSON format otherwise will return "" string.
 */
 func ParseAstFromFile(file string) (string, error) {
 	fset := token.NewFileSet()
@@ -85,7 +83,7 @@ func ParseAstFromFile(file string) (string, error) {
 	parsedAst, err := parser.ParseFile(fset, file, nil, 0)
 	if err != nil {
 		log.SetPrefix("[ERROR]")
-		log.Println("Error while parsing source file -> '", file, ",")
+		log.Println("Error while parsing source File -> '", file, ",")
 		log.Print(err)
 		return "", err
 	}
@@ -95,57 +93,6 @@ func ParseAstFromFile(file string) (string, error) {
 	lastNodeId := 1
 	result := serilizeToMap(parsedAst, fset, &lastNodeId, nodeAddressMap)
 	return serilizeToJsonStr(result)
-}
-
-// ParseModFromFile
-/*
- It will parse the .mod file and generate module and dependency information in JSON format
-
- Parameters:
-  file: absolute file path to be parsed
-
- Returns:
-  If given file is a valid .mod file then it will generate the module and dependency information in JSON format
-*/
-func ParseModFromFile(file string) (string, error) {
-	objMap := make(map[string]interface{})
-	contents, err := ioutil.ReadFile(file)
-	if err != nil {
-		log.SetPrefix("[ERROR]")
-		log.Printf("Error while processing '%s' \n", file)
-		log.Println(err)
-		return "", err
-	}
-	modFile, err := modfile.Parse(file, contents, nil)
-	if err != nil {
-		log.SetPrefix("[ERROR]")
-		log.Printf("Error while processing '%s' \n", file)
-		log.Println(err)
-		return "", err
-	}
-	objMap["node_filename"] = file
-	module := make(map[string]interface{})
-	module["Name"] = modFile.Module.Mod.Path
-	module["node_line_no"] = modFile.Module.Syntax.Start.Line
-	module["node_col_no"] = modFile.Module.Syntax.Start.LineRune
-	module["node_line_no_end"] = modFile.Module.Syntax.End.Line
-	module["node_col_no_end"] = modFile.Module.Syntax.End.LineRune
-	module["node_type"] = "mod.Module"
-	objMap["Module"] = module
-	dependencies := []interface{}{}
-	for _, req := range modFile.Require {
-		node := make(map[string]interface{})
-		node["Module"] = req.Mod.Path
-		node["Version"] = req.Mod.Version
-		node["node_line_no"] = req.Syntax.Start.Line
-		node["node_col_no"] = req.Syntax.Start.LineRune
-		node["node_line_no_end"] = req.Syntax.End.Line
-		node["node_col_no_end"] = req.Syntax.End.LineRune
-		node["node_type"] = "mod.Dependency"
-		dependencies = append(dependencies, node)
-	}
-	objMap["dependencies"] = dependencies
-	return serilizeToJsonStr(objMap)
 }
 
 /*
@@ -174,7 +121,7 @@ If the value object is of type 'struct' then we are converting it to map[string]
 
 Parameters:
  object: expects map[string] any
- fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and file details to the node.
+ fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and File details to the node.
 
 Returns:
  It returns and object of map[string]interface{} by converting any 'Struct' type value field to map
@@ -221,7 +168,7 @@ func processMap(object interface{}, fset *token.FileSet, lastNodeId *int, nodeAd
 
  Parameters:
   object: []interface{} - expected to pass object of Array or Slice
-  fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and file details to the node.
+  fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and File details to the node.
 
  Returns:
   It will return []map[string]interface{}
@@ -284,7 +231,7 @@ func processArrayOrSlice(object interface{}, fset *token.FileSet, lastNodeId *in
   objPtrValue: reflect.Value - As we cannot get the pointer information from reflect.Value object.
                If its a pointer that is getting processed, the caller will pass the reflect.Value of pointer.
                So that it can be used for checking the cache if the given object pointed by the same pointer is already processed or not.
-  fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and file details to the node.
+  fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and File details to the node.
 
  Returns:
   It will return object of map[string]interface{} by converting all the child fields recursively into map
@@ -313,11 +260,11 @@ func processStruct(node interface{}, objPtrValue reflect.Value, fset *token.File
 			//if the given object is already processed, then we are adding its respective node_id as a reference_id in this node.
 			objectMap["node_reference_id"] = refNodeId
 		}
-		// Reading and setting column no, line no and file details.
+		// Reading and setting column no, line no and File details.
 		if astNode, ok := objPtrValue.Interface().(ast.Node); ok && fset != nil {
 			if pos := astNode.Pos(); pos.IsValid() {
 				position := fset.Position(pos)
-				//Add file information only inside ast.File node which is the root node for a file AST.
+				//Add File information only inside ast.File node which is the root node for a File AST.
 				if elementValueObj.Type().String() == "ast.File" {
 					objectMap["node_filename"] = position.Filename
 				}
@@ -400,7 +347,7 @@ func processStruct(node interface{}, objPtrValue reflect.Value, fset *token.File
 
  Parameters:
   node: any object
-  fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and file details to the node.
+  fset: *token.FileSet - As this library is primarily designed to generate AST JSON. This parameter facilitate adding line, column no and File details to the node.
 
  Returns:
   possible return value types could be primitive type, map (map[string]interface{}) or slice ([]interface{})

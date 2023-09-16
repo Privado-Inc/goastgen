@@ -36,7 +36,8 @@ func processFile(out string, inputPath string, path string, info os.FileInfo, re
 	if strings.HasSuffix(info.Name(), ".go") {
 		jsonResult, err = goastgen.ParseAstFromFile(path)
 	} else if strings.HasSuffix(info.Name(), ".mod") {
-		jsonResult, err = goastgen.ParseModFromFile(path)
+		var modParser = goastgen.ModFile{File: path}
+		jsonResult, err = modParser.Parse()
 	}
 	if err != nil {
 		fmt.Printf("Failed to generate AST for %s \n", path)
