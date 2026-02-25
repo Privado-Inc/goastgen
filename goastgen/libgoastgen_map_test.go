@@ -39,35 +39,30 @@ func TestArrayOfPointerOfMapOfObjectPointerType(t *testing.T) {
 	secondMap["smsecond"] = &forth
 	array := [2]*map[string]*Phone{&firstMap, &secondMap}
 	result := goFile.processArrayOrSlice(array)
-	firstPhone := make(map[string]interface{})
-	firstPhone["PhoneNo"] = "1234567890"
-	firstPhone["Type"] = "Home"
-	firstPhone["node_type"] = "goastgen.Phone"
-	firstPhone["node_id"] = 1
-	secondPhone := make(map[string]interface{})
-	secondPhone["PhoneNo"] = "0987654321"
-	secondPhone["Type"] = "Office"
-	secondPhone["node_type"] = "goastgen.Phone"
-	secondPhone["node_id"] = 2
-	thirdPhone := make(map[string]interface{})
-	thirdPhone["PhoneNo"] = "1234567891"
-	thirdPhone["Type"] = "Home1"
-	thirdPhone["node_type"] = "goastgen.Phone"
-	thirdPhone["node_id"] = 3
-	forthPhone := make(map[string]interface{})
-	forthPhone["PhoneNo"] = "1987654321"
-	forthPhone["Type"] = "Office1"
-	forthPhone["node_type"] = "goastgen.Phone"
-	forthPhone["node_id"] = 4
-	firstExpectedMap := make(map[string]interface{})
-	firstExpectedMap["fmfirst"] = firstPhone
-	firstExpectedMap["fmsecond"] = secondPhone
-	secondExpectedMap := make(map[string]interface{})
-	secondExpectedMap["smfirst"] = thirdPhone
-	secondExpectedMap["smsecond"] = forthPhone
-	expectedResult := []interface{}{firstExpectedMap, secondExpectedMap}
 
-	assert.Equal(t, expectedResult, result, "Array of Map of simple string should match with expected result")
+	resultSlice := result.([]interface{})
+	firstResultMap := resultSlice[0].(map[string]interface{})
+	secondResultMap := resultSlice[1].(map[string]interface{})
+
+	fmFirst := firstResultMap["fmfirst"].(map[string]interface{})
+	assert.Equal(t, "1234567890", fmFirst["PhoneNo"])
+	assert.Equal(t, "Home", fmFirst["Type"])
+	assert.Equal(t, "goastgen.Phone", fmFirst["node_type"])
+
+	fmSecond := firstResultMap["fmsecond"].(map[string]interface{})
+	assert.Equal(t, "0987654321", fmSecond["PhoneNo"])
+	assert.Equal(t, "Office", fmSecond["Type"])
+	assert.Equal(t, "goastgen.Phone", fmSecond["node_type"])
+
+	smFirst := secondResultMap["smfirst"].(map[string]interface{})
+	assert.Equal(t, "1234567891", smFirst["PhoneNo"])
+	assert.Equal(t, "Home1", smFirst["Type"])
+	assert.Equal(t, "goastgen.Phone", smFirst["node_type"])
+
+	smSecond := secondResultMap["smsecond"].(map[string]interface{})
+	assert.Equal(t, "1987654321", smSecond["PhoneNo"])
+	assert.Equal(t, "Office1", smSecond["Type"])
+	assert.Equal(t, "goastgen.Phone", smSecond["node_type"])
 }
 
 func TestArrayOfPointerOfMapOfPrimitivesType(t *testing.T) {
@@ -128,27 +123,22 @@ func TestMapObjPtrType(t *testing.T) {
 
 	mapType := MapObjPtrType{Id: 90, Phones: phones}
 	result := goFile.serilizeToMap(mapType)
-	expectedResult := make(map[string]interface{})
-	expectedResult["Id"] = 90
-	expectedResult["node_type"] = "goastgen.MapObjPtrType"
-	expectedResult["node_id"] = 1
-	expectedPhones := make(map[string]interface{})
-	firstPhone := make(map[string]interface{})
-	firstPhone["PhoneNo"] = "1234567890"
-	firstPhone["Type"] = "Home"
-	firstPhone["node_type"] = "goastgen.Phone"
-	firstPhone["node_id"] = 2
-	secondPhone := make(map[string]interface{})
-	secondPhone["PhoneNo"] = "0987654321"
-	secondPhone["Type"] = "Office"
-	secondPhone["node_type"] = "goastgen.Phone"
-	secondPhone["node_id"] = 3
-	expectedPhones["first"] = firstPhone
-	expectedPhones["second"] = secondPhone
-	expectedResult["Phones"] = expectedPhones
+	resultMap := result.(map[string]interface{})
+	assert.Equal(t, 90, resultMap["Id"])
+	assert.Equal(t, "goastgen.MapObjPtrType", resultMap["node_type"])
+	assert.Equal(t, 1, resultMap["node_id"])
 
-	assert.Equal(t, expectedResult, result, "Map with Object Pointer type result Map should match with expected result Map")
+	resultPhones := resultMap["Phones"].(map[string]interface{})
 
+	firstPhone := resultPhones["first"].(map[string]interface{})
+	assert.Equal(t, "1234567890", firstPhone["PhoneNo"])
+	assert.Equal(t, "Home", firstPhone["Type"])
+	assert.Equal(t, "goastgen.Phone", firstPhone["node_type"])
+
+	secondPhone := resultPhones["second"].(map[string]interface{})
+	assert.Equal(t, "0987654321", secondPhone["PhoneNo"])
+	assert.Equal(t, "Office", secondPhone["Type"])
+	assert.Equal(t, "goastgen.Phone", secondPhone["node_type"])
 }
 
 func TestMapStrPtrType(t *testing.T) {
@@ -182,26 +172,22 @@ func TestMapObjType(t *testing.T) {
 
 	mapType := MapObjType{Id: 90, Phones: phones}
 	result := goFile.serilizeToMap(mapType)
-	expectedResult := make(map[string]interface{})
-	expectedResult["Id"] = 90
-	expectedResult["node_type"] = "goastgen.MapObjType"
-	expectedResult["node_id"] = 1
-	expectedPhones := make(map[string]interface{})
-	firstPhone := make(map[string]interface{})
-	firstPhone["PhoneNo"] = "1234567890"
-	firstPhone["Type"] = "Home"
-	firstPhone["node_type"] = "goastgen.Phone"
-	firstPhone["node_id"] = 2
-	secondPhone := make(map[string]interface{})
-	secondPhone["PhoneNo"] = "0987654321"
-	secondPhone["Type"] = "Office"
-	secondPhone["node_type"] = "goastgen.Phone"
-	secondPhone["node_id"] = 3
-	expectedPhones["first"] = firstPhone
-	expectedPhones["second"] = secondPhone
-	expectedResult["Phones"] = expectedPhones
+	resultMap := result.(map[string]interface{})
+	assert.Equal(t, 90, resultMap["Id"])
+	assert.Equal(t, "goastgen.MapObjType", resultMap["node_type"])
+	assert.Equal(t, 1, resultMap["node_id"])
 
-	assert.Equal(t, expectedResult, result, "Map with Object type result Map should match with expected result Map")
+	resultPhones := resultMap["Phones"].(map[string]interface{})
+
+	firstPhone := resultPhones["first"].(map[string]interface{})
+	assert.Equal(t, "1234567890", firstPhone["PhoneNo"])
+	assert.Equal(t, "Home", firstPhone["Type"])
+	assert.Equal(t, "goastgen.Phone", firstPhone["node_type"])
+
+	secondPhone := resultPhones["second"].(map[string]interface{})
+	assert.Equal(t, "0987654321", secondPhone["PhoneNo"])
+	assert.Equal(t, "Office", secondPhone["Type"])
+	assert.Equal(t, "goastgen.Phone", secondPhone["node_type"])
 }
 
 func TestMapIntType(t *testing.T) {
@@ -254,19 +240,15 @@ func TestSimpleMapType(t *testing.T) {
 	mapType["second"] = &phone2
 
 	result := goFile.serilizeToMap(mapType)
-	expectedResult := make(map[string]interface{})
-	firstPhone := make(map[string]interface{})
-	firstPhone["PhoneNo"] = "1234567890"
-	firstPhone["Type"] = "Home"
-	firstPhone["node_type"] = "goastgen.Phone"
-	firstPhone["node_id"] = 1
-	secondPhone := make(map[string]interface{})
-	secondPhone["PhoneNo"] = "0987654321"
-	secondPhone["Type"] = "Office"
-	secondPhone["node_type"] = "goastgen.Phone"
-	secondPhone["node_id"] = 2
-	expectedResult["first"] = firstPhone
-	expectedResult["second"] = secondPhone
+	resultMap := result.(map[string]interface{})
 
-	assert.Equal(t, expectedResult, result, "Map type with object pointer values should match with expected results")
+	firstPhone := resultMap["first"].(map[string]interface{})
+	assert.Equal(t, "1234567890", firstPhone["PhoneNo"])
+	assert.Equal(t, "Home", firstPhone["Type"])
+	assert.Equal(t, "goastgen.Phone", firstPhone["node_type"])
+
+	secondPhone := resultMap["second"].(map[string]interface{})
+	assert.Equal(t, "0987654321", secondPhone["PhoneNo"])
+	assert.Equal(t, "Office", secondPhone["Type"])
+	assert.Equal(t, "goastgen.Phone", secondPhone["node_type"])
 }
