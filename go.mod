@@ -1,11 +1,11 @@
 module privado.ai/goastgen
 
-go 1.18
+go 1.25
 
 require (
-	github.com/google/uuid v1.3.0
-	github.com/stretchr/testify v1.8.4
-	golang.org/x/mod v0.11.0
+	github.com/google/uuid v1.6.0
+	github.com/stretchr/testify v1.10.0
+	golang.org/x/mod v0.22.0
 )
 
 require (
